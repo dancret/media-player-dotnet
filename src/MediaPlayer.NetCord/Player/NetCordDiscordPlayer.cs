@@ -29,6 +29,11 @@ public sealed class NetCordDiscordPlayer(
 {    
     private bool _disposed;
 
+    /// <summary>
+    /// Indicates that the player is not usable anymore.
+    /// </summary>
+    public bool IsDisposed => _disposed;
+
     public ulong VoiceChannelId { get; } = voiceChannelId;
 
     /// <summary>
@@ -40,6 +45,11 @@ public sealed class NetCordDiscordPlayer(
 
         try
         {
+            logger.LogInformation(
+                "Player initialize: channel={ChannelId}, disposed={Disposed}",
+                VoiceChannelId,
+                _disposed);
+
             // Enter speaking state to be able to send voice
             await voiceClient.EnterSpeakingStateAsync(SpeakingFlags.Microphone);
             
@@ -47,7 +57,8 @@ public sealed class NetCordDiscordPlayer(
                 "NetCordDiscordPlayer: audio client not connected, connecting to voice channel {ChannelId}.",
                 VoiceChannelId);
 
-            logger.LogInformation("NetCordDiscordPlayer: starting playback loop for voice channel {ChannelId}.",
+            logger.LogInformation(
+                "NetCordDiscordPlayer: starting playback loop for voice channel {ChannelId}.",
                 VoiceChannelId);
 
             await StartAsync().ConfigureAwait(false);

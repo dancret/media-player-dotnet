@@ -29,6 +29,131 @@ public sealed class NetCordDiscordPlayerProvider : IAsyncDisposable
         _gatewayClient.VoiceStateUpdate += GatewayClientOnVoiceStateUpdate;
     }
 
+    public async Task<NetCordDiscordPlayer> GetPlayerAsync(Guild guild, VoiceState voiceState)
+    {
+        _logger.LogInformation(
+            "GetPlayerAsync: guild={GuildId}, userChannel={ChannelId}",
+            guild.Id,
+            voiceState.ChannelId);
+
+        var channelId = voiceState.ChannelId!.Value;
+
+        // Remove disposed player if found, and continue with creating a new one,
+        // else just return existing one.
+        if (_players.TryGetValue(channelId, out var existingPlayer))
+        {
+            if (existingPlayer.IsDisposed)
+            {
+                _logger.LogInformation(
+                    "GetPlayerAsync: removing disposed player for channel {ChannelId}",
+                    channelId);
+                _players.TryRemove(channelId, out _);
+            }
+            else
+            {
+                if (guild.VoiceStates.TryGetValue(_gatewayClient.Id, out var botVoiceState) &&
+                    botVoiceState.ChannelId == channelId)
+                {
+                    // Bot is already in the right channel and player is healthy -> reuse
+                    _logger.LogInformation(
+                        "GetPlayerAsync: reusing existing player for channel {ChannelId}",
+                        channelId);
+                    return existingPlayer;
+                }
+
+                _logger.LogWarning(
+                    "GetPlayerAsync: existing player found for channel {ChannelId}, but bot connected to {BotChannelId} or player invalid — recreating",
+                    channelId,
+                    botVoiceState?.ChannelId);
+                // Wrong channel, clean up then create again
+                _players.TryRemove(channelId, out _);
+
+                try
+                {
+                    await existingPlayer.DisposeAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to dispose stale NetCordDiscordPlayer for channel {ChannelId}", channelId);
+                }
+            }
+        }
+
+        VoiceClient? voiceClient;
+
+        try
+        {
+            _logger.LogInformation(
+                "Voice join attempt: guild={GuildId}, channel={ChannelId}",
+                guild.Id,
+                channelId);
+
+            voiceClient = await _gatewayClient.JoinVoiceChannelAsync(
+                guild.Id,
+                channelId);
+
+            _logger.LogInformation(
+                "Voice join request accepted: guild={GuildId}, channel={ChannelId}",
+                guild.Id,
+                channelId);
+
+            await voiceClient.StartAsync();
+
+            _logger.LogInformation(
+                "Voice client started: guild={GuildId}, channel={ChannelId}",
+                guild.Id,
+                channelId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Voice join failed: guild={GuildId}, channel={ChannelId}",
+                guild.Id,
+                channelId);
+
+            throw;
+        }
+
+        var logger = _loggerFactory.CreateLogger<NetCordDiscordPlayer>();
+        var player = new NetCordDiscordPlayer(channelId, voiceClient, logger, _loggerFactory);
+
+        await player.InitializeAsync();
+        _players[channelId] = player;
+
+        if (guild.VoiceStates.TryGetValue(_gatewayClient.Id, out var botState))
+        {
+            _logger.LogDebug(
+                "Bot voice state after join: channel={ChannelId}",
+                botState.ChannelId);
+        }
+        else
+        {
+            _logger.LogDebug("Bot voice state after join: not present in cache");
+        }
+
+        return player;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        foreach (var netCordDiscordPlayer in _players)
+        {
+            try
+            {
+                await netCordDiscordPlayer.Value.DisposeAsync();
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning(e, "Failed to dispose players.");
+            }
+        }
+
+        _gatewayClient.VoiceStateUpdate -= GatewayClientOnVoiceStateUpdate;
+        _gatewayClient.Dispose();
+        _loggerFactory.Dispose();
+    }
+
     /// <summary>
     /// Auto-leaves when the last non-bot user leaves the bot's voice channel.
     /// </summary>
@@ -104,48 +229,5 @@ public sealed class NetCordDiscordPlayerProvider : IAsyncDisposable
             _logger.LogError(ex,
                 "Error in GatewayClientOnVoiceStateUpdate (NetCord VoiceStateUpdate handler).");
         }
-    }
-
-    public async Task<NetCordDiscordPlayer> GetPlayerAsync(Guild guild, VoiceState voiceState)
-    {
-        var channelId = voiceState.ChannelId!.Value;
-
-        if (_players.TryGetValue(channelId, out var existing))
-        {
-            return existing;
-        }
-
-        var voiceClient = await _gatewayClient.JoinVoiceChannelAsync(
-            guild.Id,
-            channelId);
-
-        await voiceClient.StartAsync();
-
-        var logger = _loggerFactory.CreateLogger<NetCordDiscordPlayer>();
-        var player = new NetCordDiscordPlayer(channelId, voiceClient, logger, _loggerFactory);
-
-        await player.InitializeAsync();
-        _players[channelId] = player;
-
-        return player;
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        foreach (var netCordDiscordPlayer in _players)
-        {
-            try
-            {
-                await netCordDiscordPlayer.Value.DisposeAsync();
-            }
-            catch (Exception e)
-            {
-                _logger.LogWarning(e, "Failed to dispose players.");
-            }
-        }
-
-        _gatewayClient.VoiceStateUpdate -= GatewayClientOnVoiceStateUpdate;
-        _gatewayClient.Dispose();
-        _loggerFactory.Dispose();
     }
 }
