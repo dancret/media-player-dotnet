@@ -262,7 +262,11 @@ public sealed class YouTubeTrackResolver : ITrackResolver
             var query = ParseQuery(uri.Query);
 
             // Playlist links typically contain "list" parameter.
-            if (query.TryGetValue("list", out var listId) && !string.IsNullOrWhiteSpace(listId))
+            // RD playlist are radio mixes, cannot really use them with yt-dlp,
+            // so we will pass up the playlist and just try to get the video in the url.
+            if (query.TryGetValue("list", out var listId) && 
+                !string.IsNullOrWhiteSpace(listId) &&
+                !listId.StartsWith("RD"))
             {
                 item = new YouTubeItem(YouTubeItemType.Playlist, listId);
                 return true;
