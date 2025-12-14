@@ -19,11 +19,10 @@ public sealed class NetCordDiscordPlayer(
     ulong voiceChannelId,
     VoiceClient voiceClient,
     ILogger<NetCordDiscordPlayer> logger,
-    ILoggerFactory loggerFactory)
+    ILoggerFactory loggerFactory,
+    IAudioSource audioSource)
     : PlayerBase(
-        source: new YtDlpAudioSource(
-            logger: loggerFactory.CreateLogger<YtDlpAudioSource>(),
-            urlSelector: static track => track.Uri),
+        source: audioSource,
         sink: new NetCordAudioSink(voiceClient, loggerFactory.CreateLogger<NetCordAudioSink>()),
         logger: logger)
 {    
@@ -107,7 +106,7 @@ public sealed class NetCordDiscordPlayer(
 
         try
         {
-            // Dispose PlayerBase resources (loop, source, sink)
+            // Dispose of PlayerBase resources (loop, source, sink)
             await base.DisposeAsync().ConfigureAwait(false);
         }
         catch (Exception ex)

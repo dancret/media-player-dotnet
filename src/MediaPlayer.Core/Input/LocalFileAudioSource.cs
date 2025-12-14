@@ -12,7 +12,6 @@ public sealed class LocalFileAudioSource : IAudioSource
     private readonly Func<Track, string> _pathSelector;
     private readonly FfmpegPcmSourceOptions _options;
     private readonly ILogger<LocalFileAudioSource> _logger;
-    private bool _disposed;
 
     /// <summary>
     /// Creates a new <see cref="LocalFileAudioSource"/>.
@@ -40,8 +39,6 @@ public sealed class LocalFileAudioSource : IAudioSource
     /// <inheritdoc/>
     public Task<IAudioTrackReader> OpenReaderAsync(Track track, CancellationToken ct)
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(LocalFileAudioSource));
-
         if (track is null) throw new ArgumentNullException(nameof(track));
 
         var path = _pathSelector(track);
@@ -54,13 +51,5 @@ public sealed class LocalFileAudioSource : IAudioSource
 
         var reader = FfmpegPcmSource.StartPcmReader(path, _options, _logger, ct);
         return Task.FromResult(reader);
-    }
-
-    /// <inheritdoc/>
-    public ValueTask DisposeAsync()
-    {
-        _disposed = true;
-        // Nothing to dispose currently; ffmpeg processes are tied to individual readers.
-        return ValueTask.CompletedTask;
     }
 }

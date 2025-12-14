@@ -3,16 +3,20 @@ using System.Globalization;
 using MediaPlayer.Ffmpeg;
 using MediaPlayer.Tracks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace MediaPlayer.Input;
 
 /// <summary>
 /// Configuration options for creating a YtDlpAudioSource.
 /// </summary>
-/// <param name="YtDlpPath">
-/// Path or name of the yt-dlp executable. Defaults to "yt-dlp" (resolved via PATH).
-/// </param>
-public record YtDlpAudioSourceOptions(string YtDlpPath = "yt-dlp") : FfmpegPcmSourceOptions;
+public record YtDlpAudioSourceOptions : FfmpegPcmSourceOptions
+{
+    /// <summary>
+    /// Path or name of the yt-dlp executable. Defaults to "yt-dlp" (resolved via PATH).
+    /// </summary>
+    public string YtDlpPath { get; set; } = "yt-dlp";
+}
 
 /// <summary>
 /// Audio source that reads yt-dlp output and pipes it into ffmpeg to decode into PCM.
@@ -27,20 +31,20 @@ public sealed class YtDlpAudioSource : IAudioSource
     /// Creates a new <see cref="YtDlpAudioSource"/>.
     /// </summary>
     /// <param name="logger">Logger instance.</param>
+    /// <param name="options">Options for configuring yt-dlp + ffmpeg.</param>
     /// <param name="urlSelector">
     /// Given a <see cref="Track"/>, returns the YouTube (or supported site) URL
     /// that should be passed to yt-dlp.
     /// </param>
-    /// <param name="options">Options for configuring yt-dlp + ffmpeg.</param>
     /// <exception cref="ArgumentNullException"></exception>
     public YtDlpAudioSource(
         ILogger<YtDlpAudioSource> logger,
-        Func<Track, string> urlSelector,
-        YtDlpAudioSourceOptions? options = null)
+        IOptions<YtDlpAudioSourceOptions> options,
+        Func<Track, string>? urlSelector = null)
     {
         _logger = logger;
-        _urlSelector = urlSelector ?? throw new ArgumentNullException(nameof(urlSelector));
-        _options = options ?? new YtDlpAudioSourceOptions();
+        _urlSelector = urlSelector ?? (static track => track.Uri);
+        _options = options.Value;
     }
 
     /// <inheritdoc/>
@@ -188,13 +192,7 @@ public sealed class YtDlpAudioSource : IAudioSource
         IAudioTrackReader reader = new YtDlpTrackReader(_logger, ytdlp, ffmpeg, pumpTask, pumpCts);
         return Task.FromResult(reader);
     }
-
-    public ValueTask DisposeAsync()
-    {
-        // No shared resources; all processes are lifecycle-bound to individual readers
-        return ValueTask.CompletedTask;
-    }
-
+    
     private sealed class YtDlpTrackReader : IAudioTrackReader
     {
         private readonly ILogger<YtDlpAudioSource> _logger;

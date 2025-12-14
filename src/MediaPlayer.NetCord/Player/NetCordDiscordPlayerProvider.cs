@@ -2,6 +2,7 @@
 using NetCord.Gateway;
 using NetCord.Gateway.Voice;
 using System.Collections.Concurrent;
+using MediaPlayer.Input;
 
 namespace MediaPlayer.NetCord.Player;
 
@@ -16,15 +17,18 @@ public sealed class NetCordDiscordPlayerProvider : IAsyncDisposable
     private readonly GatewayClient _gatewayClient;
     private readonly ILogger<NetCordDiscordPlayerProvider> _logger;
     private readonly ILoggerFactory _loggerFactory;
+    private readonly IAudioSource _audioSource;
 
     public NetCordDiscordPlayerProvider(
         ILogger<NetCordDiscordPlayerProvider> logger,
         ILoggerFactory loggerFactory,
-        GatewayClient gatewayClient)
+        GatewayClient gatewayClient, 
+        IAudioSource audioSource)
     {
         _logger = logger;
         _loggerFactory = loggerFactory;
         _gatewayClient = gatewayClient;
+        _audioSource = audioSource;
 
         _gatewayClient.VoiceStateUpdate += GatewayClientOnVoiceStateUpdate;
     }
@@ -116,7 +120,7 @@ public sealed class NetCordDiscordPlayerProvider : IAsyncDisposable
         }
 
         var logger = _loggerFactory.CreateLogger<NetCordDiscordPlayer>();
-        var player = new NetCordDiscordPlayer(channelId, voiceClient, logger, _loggerFactory);
+        var player = new NetCordDiscordPlayer(channelId, voiceClient, logger, _loggerFactory, _audioSource);
 
         await player.InitializeAsync();
         _players[channelId] = player;

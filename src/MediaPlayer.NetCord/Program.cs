@@ -1,4 +1,6 @@
-﻿using MediaPlayer.NetCord;
+﻿using MediaPlayer.Ffmpeg;
+using MediaPlayer.Input;
+using MediaPlayer.NetCord;
 using MediaPlayer.NetCord.Misc;
 using MediaPlayer.NetCord.Player;
 using MediaPlayer.Tracks;
@@ -30,6 +32,25 @@ builder.Logging.AddLog4Net("log4net.config");
 
 var services = builder.Services;
 
+var configurationSection = builder.Configuration;
+
+services.AddOptions<YtDlpAudioSourceOptions>()
+    .Bind(configurationSection.GetSection(nameof(YtDlpAudioSourceOptions)))
+    .Validate(o =>
+        !string.IsNullOrWhiteSpace(o.YtDlpPath),
+        $"{nameof(YtDlpAudioSourceOptions)}:{nameof(YtDlpAudioSourceOptions.YtDlpPath)} cannot be empty.")
+    .Validate(o =>
+            !string.IsNullOrWhiteSpace(o.FfmpegPath),
+        $"{nameof(YtDlpAudioSourceOptions)}:{nameof(YtDlpAudioSourceOptions.FfmpegPath)} cannot be empty.")
+    .ValidateOnStart();
+
+services.AddOptions<YouTubeTrackResolverOptions>()
+    .Bind(configurationSection.GetSection(nameof(YouTubeTrackResolverOptions)))
+    .Validate(o => 
+            !string.IsNullOrWhiteSpace(o.YtDlpPath), 
+        $"{nameof(YouTubeTrackResolverOptions)}:{nameof(YouTubeTrackResolverOptions.YtDlpPath)} cannot be empty.")
+    .ValidateOnStart();
+
 services.AddWindowsService();
 services.AddSystemd();
 
@@ -42,6 +63,7 @@ services
     .ConfigureHttpClientDefaults(b => b.RemoveAllLoggers())
     .AddSingleton<ITrackRequestCache, EasyCachingCache>()
     .AddSingleton<ITrackResolver, YouTubeTrackResolver>()
+    .AddSingleton<IAudioSource, YtDlpAudioSource>()
     .AddSingleton<NetCordDiscordPlayerProvider>()
     .AddApplicationCommands()
     .AddDiscordGateway(options =>

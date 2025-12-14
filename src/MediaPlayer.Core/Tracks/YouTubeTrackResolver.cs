@@ -4,8 +4,34 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using MediaPlayer.Input;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace MediaPlayer.Tracks;
+
+/// <summary>
+/// Configuration options for <see cref="YouTubeTrackResolver"/>.
+/// </summary>
+/// <remarks>
+/// <para>
+/// This record allows customization of <see cref="YouTubeTrackResolver"/> behavior, including:
+/// <list type="bullet">
+/// <item><description>Specifying the path to the <c>yt-dlp</c> executable.</description></item>
+/// <item><description>Setting a time-to-live (TTL) duration for cached results.</description></item>
+/// </list>
+/// </para>
+/// </remarks>
+public record YouTubeTrackResolverOptions
+{
+    /// <summary>
+    /// The option helps locate the <c>yt-dlp</c> binary for metadata fetching, defaulting
+    /// to a system-wide installation if none is specified.
+    /// </summary>
+    public string YtDlpPath { get; set; } = "yt-dlp";
+    /// <summary>
+    /// The option defines how long successfully resolved YouTube tracks should remain in the cache when caching is enabled.
+    /// </summary>
+    public TimeSpan CacheTtl { get; set; } = TimeSpan.Zero;
+}
 
 /// <summary>
 /// Resolves <see cref="Track"/> instances from YouTube URLs or IDs using <c>yt-dlp</c>
@@ -28,8 +54,6 @@ namespace MediaPlayer.Tracks;
 /// </remarks>
 public sealed class YouTubeTrackResolver : ITrackResolver
 {
-    private const string DefaultYtDlpExecutable = "yt-dlp";
-    private static readonly TimeSpan DefaultCacheTtl = TimeSpan.FromDays(1);
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
@@ -37,31 +61,29 @@ public sealed class YouTubeTrackResolver : ITrackResolver
 
     private readonly ILogger<YouTubeTrackResolver> _logger;
     private readonly ITrackRequestCache? _cache;
-    private readonly string _ytDlpPath;
     private readonly SemaphoreSlim _ytDlpSemaphore = new(4, 4); // limit concurrent yt-dlp processes
+    private readonly YouTubeTrackResolverOptions _options;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="YouTubeTrackResolver"/> class.
     /// </summary>
     /// <param name="logger">Logger used for diagnostic messages.</param>
+    /// <param name="options">Configuration options for resolving and caching YouTube tracks.</param>
     /// <param name="cache">
     /// Optional cache used to store resolved tracks keyed by normalized YouTube identifiers.
     /// If <see langword="null" />, no caching is performed.
-    /// </param>
-    /// <param name="ytDlpPath">
-    /// Path to the <c>yt-dlp</c> executable. Defaults to <c>"yt-dlp"</c>, which relies on the system PATH.
     /// </param>
     /// <exception cref="ArgumentNullException">
     /// Thrown if <paramref name="logger"/> is <see langword="null" />.
     /// </exception>
     public YouTubeTrackResolver(
         ILogger<YouTubeTrackResolver> logger,
-        ITrackRequestCache? cache = null,
-        string ytDlpPath = DefaultYtDlpExecutable)
+        IOptions<YouTubeTrackResolverOptions> options,
+        ITrackRequestCache? cache = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _cache = cache;
-        _ytDlpPath = string.IsNullOrWhiteSpace(ytDlpPath) ? DefaultYtDlpExecutable : ytDlpPath;
+        _options = options.Value;
     }
 
     /// <inheritdoc />
@@ -89,8 +111,8 @@ public sealed class YouTubeTrackResolver : ITrackResolver
     /// Internal async iterator that performs the actual resolution and caching for YouTube requests.
     /// </summary>
     private async IAsyncEnumerable<Track> ResolveInternalAsync(
-       TrackRequest request,
-       [EnumeratorCancellation] CancellationToken ct)
+        TrackRequest request,
+        [EnumeratorCancellation] CancellationToken ct)
     {
         if (!TryParseYouTube(request, out var item) ||
             item.Type is not (YouTubeItemType.Video or YouTubeItemType.Playlist))
@@ -132,7 +154,7 @@ public sealed class YouTubeTrackResolver : ITrackResolver
 
                 YouTubeItemType.Playlist =>
                     await ResolvePlaylistExpandedAsync(item, ct).ConfigureAwait(false),
-                
+
                 _ => []
             };
         }
@@ -148,13 +170,13 @@ public sealed class YouTubeTrackResolver : ITrackResolver
             resolvedTracks = [];
         }
 
-        // Store in cache if available and we have results.
-        if (_cache is not null && resolvedTracks.Count > 0)
+        // Store in cache if available, we have results and cache TTL is not zero.
+        if (_cache is not null && resolvedTracks.Count > 0 && _options.CacheTtl > TimeSpan.Zero)
         {
             try
             {
                 await _cache
-                    .SetAsync(cacheKey, resolvedTracks, DefaultCacheTtl, ct)
+                    .SetAsync(cacheKey, resolvedTracks, _options.CacheTtl, ct)
                     .ConfigureAwait(false);
             }
             catch (Exception ex)
@@ -171,7 +193,6 @@ public sealed class YouTubeTrackResolver : ITrackResolver
             yield return track;
         }
     }
-
 
     #endregion
 
@@ -264,7 +285,7 @@ public sealed class YouTubeTrackResolver : ITrackResolver
             // Playlist links typically contain "list" parameter.
             // RD playlist are radio mixes, cannot really use them with yt-dlp,
             // so we will pass up the playlist and just try to get the video in the url.
-            if (query.TryGetValue("list", out var listId) && 
+            if (query.TryGetValue("list", out var listId) &&
                 !string.IsNullOrWhiteSpace(listId) &&
                 !listId.StartsWith("RD"))
             {
@@ -531,7 +552,7 @@ public sealed class YouTubeTrackResolver : ITrackResolver
         {
             var psi = new ProcessStartInfo
             {
-                FileName = _ytDlpPath,
+                FileName = _options.YtDlpPath,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true
@@ -547,7 +568,7 @@ public sealed class YouTubeTrackResolver : ITrackResolver
             if (!process.Start())
             {
                 throw new InvalidOperationException(
-                    $"Failed to start yt-dlp process using path '{_ytDlpPath}'.");
+                    $"Failed to start yt-dlp process using path '{_options.YtDlpPath}'.");
             }
 
             var stdoutTask = process.StandardOutput.ReadToEndAsync(ct);

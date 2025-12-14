@@ -10,7 +10,7 @@ namespace MediaPlayer.Input;
 /// and creating readers to process PCM-encoded audio data. Implementations of this interface are expected
 /// to support asynchronous operations and proper resource management, including asynchronous disposal.
 /// </remarks>
-public interface IAudioSource : IAsyncDisposable
+public interface IAudioSource
 {
     /// <summary>
     /// Opens a new <see cref="IAudioTrackReader"/> for the specified track.

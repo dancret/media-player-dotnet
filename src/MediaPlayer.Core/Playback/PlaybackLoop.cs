@@ -315,10 +315,9 @@ internal sealed class PlaybackLoop(
     {
         try
         {
+            _commands.Writer.TryComplete();
             _sessionCts?.Cancel();
             _loopCts?.Cancel();
-            _commands.Writer.TryComplete();
-
         }
         catch (Exception ex)
         {
@@ -328,7 +327,6 @@ internal sealed class PlaybackLoop(
         {
             _sessionCts?.Dispose();
             _loopCts?.Dispose();
-            // source might be shared elsewhere; only dispose sink here
             await sink.DisposeAsync();
         }
     }

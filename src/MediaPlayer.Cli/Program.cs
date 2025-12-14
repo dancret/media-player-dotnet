@@ -5,6 +5,7 @@ using MediaPlayer.Output;
 using MediaPlayer.Playback;
 using MediaPlayer.Tracks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 var loggerFactory = LoggerFactory.Create(builder =>
 {
@@ -23,7 +24,7 @@ var ytLogger = loggerFactory.CreateLogger<YtDlpAudioSource>();
 var localFileLogger = loggerFactory.CreateLogger<LocalFileAudioSource>();
 
 var localSource = new LocalFileAudioSource(localFileLogger, t => t.Uri);
-var ytSource = new YtDlpAudioSource(ytLogger, t => t.Uri );
+var ytSource = new YtDlpAudioSource(ytLogger, new OptionsWrapper<YtDlpAudioSourceOptions>(new YtDlpAudioSourceOptions()), t => t.Uri );
 
 var routingSource = new RoutingAudioSource(
     inputSelector: track => track.Input,
@@ -36,12 +37,12 @@ var routingSource = new RoutingAudioSource(
 );
 
 // Create source/sink; keep simple, you can refine later.
-await using IAudioSource source = routingSource;
+IAudioSource source = routingSource;
 await using IAudioSink sink = new FfplaySink();
 
 // Create resolvers
 var ytTrackResolverLogger = loggerFactory.CreateLogger<YouTubeTrackResolver>();
-var ytTrackResolver = new YouTubeTrackResolver(ytTrackResolverLogger);
+var ytTrackResolver = new YouTubeTrackResolver(ytTrackResolverLogger, new OptionsWrapper<YouTubeTrackResolverOptions>(new YouTubeTrackResolverOptions()));
 var localTrackResolverLogger = loggerFactory.CreateLogger<LocalFileTrackResolver>();
 var localTrackResolver = new LocalFileTrackResolver(localTrackResolverLogger);
 var routingTrackResolverLogger = loggerFactory.CreateLogger<RoutingTrackResolver>();
