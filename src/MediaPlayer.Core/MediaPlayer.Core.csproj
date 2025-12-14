@@ -4,6 +4,9 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>MediaPlayer</RootNamespace>
+    <Authors>Dan Creț</Authors>
+    <Description>A modular, extensible audio playback engine written in C# and targeting modern .NET</Description>
+    <Copyright>Copyright (c) 2025 Dan Creț</Copyright>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="JetBrains.Annotations" Version="2025.2.2" />

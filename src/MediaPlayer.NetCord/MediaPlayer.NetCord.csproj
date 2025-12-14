@@ -5,6 +5,9 @@
 		<TargetFramework>net10.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<Authors>Dan Creț</Authors>
+		<Copyright>Copyright (c) 2025 Dan Creț</Copyright>
+		<Description>Discord app for the media player engine</Description>
 	</PropertyGroup>
 
 
