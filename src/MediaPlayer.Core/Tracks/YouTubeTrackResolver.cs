@@ -592,7 +592,7 @@ public sealed class YouTubeTrackResolver : ITrackResolver
                 cookies.AddRange(["--cookies-from-browser", _ytDlpOptions.CookiesFromBrowser]);
             }
 
-            if (!string.IsNullOrWhiteSpace(_ytDlpOptions.CookiesFile))
+            if (!string.IsNullOrWhiteSpace(_ytDlpOptions.CookiesFile) && File.Exists(_ytDlpOptions.CookiesFile))
             {
                 cookies.AddRange(["--cookies", _ytDlpOptions.CookiesFile]);
             }

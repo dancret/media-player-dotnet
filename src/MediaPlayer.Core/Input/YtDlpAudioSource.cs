@@ -76,7 +76,7 @@ public sealed class YtDlpAudioSource : IAudioSource
                 ytdlpPsi.ArgumentList.Add(_ytDlpOptions.CookiesFromBrowser);
             }
 
-            if (!string.IsNullOrWhiteSpace(_ytDlpOptions.CookiesFile))
+            if (!string.IsNullOrWhiteSpace(_ytDlpOptions.CookiesFile) && File.Exists(_ytDlpOptions.CookiesFile))
             {
                 ytdlpPsi.ArgumentList.Add("--cookies");
                 ytdlpPsi.ArgumentList.Add(_ytDlpOptions.CookiesFile);

@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 var loggerFactory = LoggerFactory.Create(builder =>
 {
     builder
-        .SetMinimumLevel(LogLevel.Information)
+        .SetMinimumLevel(LogLevel.Debug)
         .AddSimpleConsole(options =>
         {
             options.SingleLine = true;
@@ -22,10 +22,12 @@ var cliPlayerLogger = loggerFactory.CreateLogger<CliPlayer>();
 var ytLogger = loggerFactory.CreateLogger<YtDlpAudioSource>();
 var localFileLogger = loggerFactory.CreateLogger<LocalFileAudioSource>();
 
+var ytDlpOptions = new YtDlpOptions();
+
 var localSource = new LocalFileAudioSource(localFileLogger, t => t.Uri);
 var ytSource = new YtDlpAudioSource(
-    ytLogger, 
-    new OptionsWrapper<YtDlpOptions>(new YtDlpOptions()), 
+    ytLogger,
+    new OptionsWrapper<YtDlpOptions>(ytDlpOptions),
     new OptionsWrapper<FfmpegOptions>(new FfmpegOptions()),
     t => t.Uri);
 
@@ -46,9 +48,9 @@ await using IAudioSink sink = new FfplaySink();
 // Create resolvers
 var ytTrackResolverLogger = loggerFactory.CreateLogger<YouTubeTrackResolver>();
 var ytTrackResolver = new YouTubeTrackResolver(
-    ytTrackResolverLogger, 
+    ytTrackResolverLogger,
     new OptionsWrapper<TrackResolverOptions>(new TrackResolverOptions()),
-    new OptionsWrapper<YtDlpOptions>(new YtDlpOptions()));
+    new OptionsWrapper<YtDlpOptions>(ytDlpOptions));
 var localTrackResolverLogger = loggerFactory.CreateLogger<LocalFileTrackResolver>();
 var localTrackResolver = new LocalFileTrackResolver(localTrackResolverLogger);
 var routingTrackResolverLogger = loggerFactory.CreateLogger<RoutingTrackResolver>();
