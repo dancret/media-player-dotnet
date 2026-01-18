@@ -19,6 +19,9 @@ public static class CacheConfig
     ///   <item>
     ///     <description>Redis app settings: <see href="https://easycaching.readthedocs.io/en/latest/Redis/"/>.</description>
     ///   </item>
+    ///   <item>
+    ///     <description>SQLite app settings: <see href="https://easycaching.readthedocs.io/en/latest/SQLite/"/>.</description>
+    ///   </item>
     /// </list>
     /// </remarks>
     /// <param name="services">Runtime services collection.</param>
@@ -34,11 +37,8 @@ public static class CacheConfig
         {
             services.AddEasyCaching(options =>
             {
-                options.UseRedis(config =>
-                {
-                    options.UseRedis(configuration, "defaultRedis");
-                    options.WithJson();
-                });
+                options.UseRedis(configuration, "defaultRedis");
+                options.WithJson();
             });
         }
         else if (sqliteSection.Exists())
