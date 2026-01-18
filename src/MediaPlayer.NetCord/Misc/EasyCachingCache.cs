@@ -15,7 +15,7 @@ namespace MediaPlayer.NetCord.Misc
         {
             try
             {
-                var value = await provider.GetAsync<IReadOnlyList<Track>>(key, ct);
+                var value = await provider.GetAsync<List<Track>>(key, ct);
 
                 return value.Value;
             }
@@ -32,7 +32,7 @@ namespace MediaPlayer.NetCord.Misc
             {
                 if (!tracks.Any()) return;
 
-                await provider.SetAsync(key, tracks, ttl, ct);
+                await provider.SetAsync(key, tracks.ToList(), ttl, ct);
             }
             catch (Exception e)
             {

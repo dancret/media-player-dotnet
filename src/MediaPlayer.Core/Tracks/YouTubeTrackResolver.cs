@@ -374,8 +374,8 @@ public sealed class YouTubeTrackResolver : ITrackResolver
         if (result.ExitCode != 0 || string.IsNullOrWhiteSpace(result.Stdout))
         {
             _logger.LogWarning(
-                "YouTubeTrackResolver received non-success exit code {ExitCode} resolving video '{VideoId}'.",
-                result.ExitCode, item.Id);
+                "YouTubeTrackResolver received non-success exit code {ExitCode} resolving video '{VideoId}', error '{Error}'.",
+                result.ExitCode, item.Id, result.Error);
             return Array.Empty<Track>();
         }
 
@@ -445,8 +445,8 @@ public sealed class YouTubeTrackResolver : ITrackResolver
         if (result.ExitCode != 0 || string.IsNullOrWhiteSpace(result.Stdout))
         {
             _logger.LogWarning(
-                "YouTubeTrackResolver received non-success exit code {ExitCode} resolving playlist '{PlaylistId}'.",
-                result.ExitCode, item.Id);
+                "YouTubeTrackResolver received non-success exit code {ExitCode} resolving playlist '{PlaylistId}', error '{Error}'.",
+                result.ExitCode, item.Id, result.Error);
             return Array.Empty<Track>();
         }
 
@@ -515,6 +515,11 @@ public sealed class YouTubeTrackResolver : ITrackResolver
         /// Gets or sets the process exit code.
         /// </summary>
         public required int ExitCode { get; init; }
+
+        /// <summary>
+        /// Gets or sets the standard error content produced by <c>yt-dlp</c>.
+        /// </summary>
+        public required string Error { get; set; }
     }
 
     /// <summary>
@@ -573,7 +578,8 @@ public sealed class YouTubeTrackResolver : ITrackResolver
             return new YtDlpResult
             {
                 Stdout = stdout,
-                ExitCode = exitCode
+                ExitCode = exitCode,
+                Error = stderr
             };
         }
         finally
