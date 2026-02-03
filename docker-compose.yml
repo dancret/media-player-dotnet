@@ -1,0 +1,14 @@
+services:
+  mediaplayer-netcord:
+    image: mediaplayer-netcord:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mediaplayer-netcord
+    restart: unless-stopped
+    volumes:
+      - ${APPSETTINGS_PATH}:/app/appsettings.json:ro
+      - ${LOGS_PATH}:/app/Logs
+      - ${COOKIES_PATH}:/app/cookies.txt:rw
+    environment:
+      DOTNET_ENVIRONMENT: Production
