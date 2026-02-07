@@ -1,4 +1,4 @@
-# dotnet-media-player
+# MediaPlayer.NET
 
 A modular, extensible audio playback engine written in C# and targeting modern .NET (currently .NET 10).
 The goal of this project is to provide a clean, predictable playback model, built around clear abstractions for audio sources, sinks, and players. The design favors transparency, debuggability, and well-defined concurrency boundaries, without being tied to any specific UI or hosting environment.
