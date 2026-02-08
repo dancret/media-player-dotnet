@@ -14,7 +14,7 @@ RUN apt-get update \
         ca-certificates \
         curl \
         ffmpeg \
-        python3 \
+        nodejs \
         libsodium23 \
         libopus0 \
     && rm -rf /var/lib/apt/lists/*
@@ -26,8 +26,15 @@ RUN getent group app || groupadd -r app \
 
 RUN ln -sf /usr/lib/x86_64-linux-gnu/libopus.so.0 /usr/lib/x86_64-linux-gnu/libopus.so
 
-RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /home/app/.local/bin/yt-dlp \
+RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux -o /home/app/.local/bin/yt-dlp \
     && chmod a+rx /home/app/.local/bin/yt-dlp
+
+RUN printf '%s\n' \
+            '--js-runtimes node:/usr/bin/node' \
+            '--no-warnings' \
+            > /etc/yt-dlp.conf
+
+RUN apt-get purge -y --auto-remove
 
 COPY --from=build /app/publish ./
 COPY src/MediaPlayer.NetCord/appsettings.json /app/appsettings.json
