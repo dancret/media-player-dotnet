@@ -10,6 +10,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 using NetCord.Gateway;
+using NetCord.Gateway.ReconnectStrategies;
 using NetCord.Hosting.Gateway;
 using NetCord.Hosting.Services;
 using NetCord.Hosting.Services.ApplicationCommands;
@@ -63,7 +64,7 @@ services.AddSystemd();
 CacheConfig.Configure(services, configurationSection);
 
 services
-    .ConfigureHttpClientDefaults(b => b.RemoveAllLoggers())
+    .AddNetworkGate()
     .AddSingleton<ITrackRequestCache, EasyCachingCache>()
     .AddSingleton<ITrackResolver, YouTubeTrackResolver>()
     .AddSingleton<IAudioSource, YtDlpAudioSource>()
@@ -71,6 +72,7 @@ services
     .AddApplicationCommands()
     .AddDiscordGateway(options =>
     {
+        options.ReconnectStrategy = new ReconnectStrategy();
         options.Intents = GatewayIntents.Guilds | GatewayIntents.GuildVoiceStates;
     })
     .AddHostedService<DiscordBotService>();
@@ -79,5 +81,7 @@ var host = builder
     .Build()
     .AddModules(typeof(Program).Assembly)
     .UseGatewayEventHandlers();
+
+await host.WaitForNetworkAsync(CancellationToken.None);
 
 await host.RunAsync();

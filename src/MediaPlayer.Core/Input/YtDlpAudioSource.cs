@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Diagnostics;
 using System.Globalization;
-using System.Net;
 
 namespace MediaPlayer.Input;
 

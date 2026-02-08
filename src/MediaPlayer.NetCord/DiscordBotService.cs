@@ -8,8 +8,6 @@ public sealed class DiscordBotService(
     IHostApplicationLifetime lifetime)
     : IHostedService
 {
-    private readonly IHostApplicationLifetime _lifetime = lifetime;
-
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         logger.LogInformation("Discord bot starting...");

@@ -1,8 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-using MediaPlayer.Output;
+﻿using MediaPlayer.Output;
 using Microsoft.Extensions.Logging;
 using NetCord.Gateway.Voice;
 

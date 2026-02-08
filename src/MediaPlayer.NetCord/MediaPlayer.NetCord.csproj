@@ -20,17 +20,18 @@
 		<PackageReference Include="EasyCaching.SQLite" Version="1.9.2" />
 		<PackageReference Include="log4net" Version="3.2.0" />
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="10.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.2" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.2" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="10.0.2" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.2" />
+		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.2" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Log4Net.AspNetCore" Version="8.0.0" />
 		<PackageReference Include="NetCord" Version="1.0.0-alpha.371" />
 		<PackageReference Include="NetCord.Hosting" Version="1.0.0-alpha.371" />
 		<PackageReference Include="NetCord.Hosting.Services" Version="1.0.0-alpha.371" />
 		<PackageReference Include="NetCord.Services" Version="1.0.0-alpha.371" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+		<PackageReference Include="Polly" Version="8.6.5" />
 	</ItemGroup>
 
 
