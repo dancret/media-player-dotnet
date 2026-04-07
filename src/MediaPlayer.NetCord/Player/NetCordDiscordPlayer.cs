@@ -50,7 +50,7 @@ public sealed class NetCordDiscordPlayer(
                 _disposed);
 
             // Enter speaking state to be able to send voice
-            await voiceClient.EnterSpeakingStateAsync(SpeakingFlags.Microphone);
+            await voiceClient.EnterSpeakingStateAsync(new SpeakingProperties(SpeakingFlags.Microphone)).ConfigureAwait(false);
             
             logger.LogInformation(
                 "NetCordDiscordPlayer: audio client not connected, connecting to voice channel {ChannelId}.",

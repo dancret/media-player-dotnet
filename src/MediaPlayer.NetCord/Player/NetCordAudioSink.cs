@@ -167,7 +167,7 @@ internal sealed class NetCordAudioSink(
             if (_opusStream is not null)
                 return _opusStream;
 
-            var outStream = voiceClient.CreateOutputStream();
+            var outStream = voiceClient.CreateVoiceStream();
 
             _opusStream = new OpusEncodeStream(
                 outStream,

@@ -79,8 +79,7 @@ services
 
 var host = builder
     .Build()
-    .AddModules(typeof(Program).Assembly)
-    .UseGatewayEventHandlers();
+    .AddModules(typeof(Program).Assembly);
 
 await host.WaitForNetworkAsync(CancellationToken.None);
 

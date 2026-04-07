@@ -17,6 +17,7 @@ RUN apt-get update \
         nodejs \
         libsodium23 \
         libopus0 \
+        libdave \
     && rm -rf /var/lib/apt/lists/*
 
 RUN getent group app || groupadd -r app \
