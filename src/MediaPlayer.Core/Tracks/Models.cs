@@ -12,10 +12,13 @@ namespace MediaPlayer.Tracks;
 ///   <item>
 ///     <description>For <see cref="TrackInput.YouTube"/>, this is the YouTube video URL</description>
 ///   </item>
+///   <item>
+///     <description>For <see cref="TrackInput.Radio"/>, this is the radio stream URL</description>
+///   </item>
 /// </list>
 /// </param>
 /// <param name="Title">The title or name of the track.</param>
-/// <param name="Input">The source type of the track, such as a local file or YouTube.</param>
+/// <param name="Input">The source type of the track, such as a local file, YouTube, or radio.</param>
 /// <param name="DurationHint">An optional hint for the track's duration.</param>
 public sealed record Track(
     string Uri,

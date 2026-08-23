@@ -12,7 +12,11 @@ public enum TrackInput
     /// <summary>
     /// Indicates that the track is sourced from a YouTube video.
     /// </summary>
-    YouTube
+    YouTube,
+    /// <summary>
+    /// Indicates that the track is sourced from a radio stream URL.
+    /// </summary>
+    Radio
 }
 
 /// <summary>

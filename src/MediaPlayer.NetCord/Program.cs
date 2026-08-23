@@ -3,6 +3,7 @@ using MediaPlayer.Input;
 using MediaPlayer.NetCord;
 using MediaPlayer.NetCord.Misc;
 using MediaPlayer.NetCord.Player;
+using MediaPlayer.NetCord.Radio;
 using MediaPlayer.Tracks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -58,6 +59,18 @@ services.AddOptions<YtDlpOptions>()
 services.AddOptions<TrackResolverOptions>()
     .Bind(configurationSection.GetSection(nameof(TrackResolverOptions)));
 
+services.AddOptions<RadioOptions>()
+    .Bind(configurationSection.GetSection(nameof(RadioOptions)))
+    .Validate(static o => o.Stations.Count > 0,
+        $"{nameof(RadioOptions)}:{nameof(RadioOptions.Stations)} must contain at least one station.")
+    .Validate(static o => o.Stations.All(static station =>
+            !string.IsNullOrWhiteSpace(station.Key) &&
+            !string.IsNullOrWhiteSpace(station.Value) &&
+            Uri.TryCreate(station.Value, UriKind.Absolute, out var uri) &&
+            uri.Scheme is "http" or "https"),
+        $"{nameof(RadioOptions)}:{nameof(RadioOptions.Stations)} must contain non-empty station names and absolute HTTP(S) URLs.")
+    .ValidateOnStart();
+
 services.AddWindowsService();
 services.AddSystemd();
 
@@ -66,8 +79,20 @@ CacheConfig.Configure(services, configurationSection);
 services
     .AddNetworkGate()
     .AddSingleton<ITrackRequestCache, EasyCachingCache>()
-    .AddSingleton<ITrackResolver, YouTubeTrackResolver>()
-    .AddSingleton<IAudioSource, YtDlpAudioSource>()
+    .AddTrackResolvers()
+    .AddSingleton<RadioSourceService>()
+    .AddSingleton<YtDlpAudioSource>()
+    .AddSingleton<RadioAudioSource>()
+    .AddSingleton<IAudioSource>(sp =>
+    {
+        return new RoutingAudioSource(
+            static track => track.Input,
+            new Dictionary<TrackInput, IAudioSource>
+            {
+                [TrackInput.YouTube] = sp.GetRequiredService<YtDlpAudioSource>(),
+                [TrackInput.Radio] = sp.GetRequiredService<RadioAudioSource>(),
+            });
+    })
     .AddSingleton<NetCordDiscordPlayerProvider>()
     .AddApplicationCommands()
     .AddDiscordGateway(options =>
